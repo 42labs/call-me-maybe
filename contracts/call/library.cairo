@@ -4,33 +4,33 @@ from starkware.starknet.common.syscalls import get_caller_address, get_block_tim
 from starkware.cairo.common.math import assert_lt, assert_not_equal
 from starkware.cairo.common.bool import TRUE, FALSE
 
+from contracts.erc20.IERC20 import IERC20
+
 namespace Call:
     #
     # Structs
     #
-    struct CallOption:
+    struct CallOptionSubmission:
         member id : felt  # incrementing ID that also acts as a Nonce
         member expiration_timestamp : felt  # UTC, epoch
-        member fee : felt  # fee in base_currency, with 18 decimals (because ETH)
-        member size : felt  # size of the option (amount of quote_currency)
-        member base_currency : felt  # base currency (for the fee and option denomination)
-        member quote_currency : felt  # quote currency
-        member strike_price : felt  # strike price in base_currency/quote_currency
+        member fee : felt  # fee in currency, with 18 decimals (because ETH)
+        member size : felt  # size of the option (amount of currency)
+        member currency_address : felt  # currency address (for the fee and option denomination)
+        member strike_price : felt  # strike price in currency/USD
+    end
+
+    struct CallOption:
+        member id : felt
+        member expiration_timestamp : felt
+        member fee : felt
+        member size : felt
+        member currency_address : felt
+        member strike_price : felt
         member buyer_address : felt
         member seller_address : felt
         member did_buyer_initialize : felt  # Boolean, TRUE iff buyer has submitted data and fee
         member did_seller_initialize : felt  # Boolean, TRUE iff seller has submitted data and margin
         member is_canceled : felt  # Boolean, TRUE iff buyer submitted a cancel request before the seller initialized
-    end
-
-    struct CallOptionSubmission:
-        member id : felt  # incrementing ID that also acts as a Nonce
-        member expiration_timestamp : felt  # UTC, epoch
-        member fee : felt  # fee in base_currency, with 18 decimals (because ETH)
-        member size : felt  # size of the option
-        member base_currency : felt  # base currency (for the fee and option denomination)
-        member quote_currency : felt
-        member strike_price : felt  # strike price in base_currency/quote_currency
     end
 
     #
@@ -82,7 +82,7 @@ namespace Call:
 
     # Called by buyer to register the call option
     func register_call_option(call_option_submission : CallOptionSubmission):
-        let (existing_call_option) = call_option_storage.read(call_option_submission.id)
+        let (existing_call_option) = get_call_option(call_option_submission.id)
 
         with_attr error_message("Call already registered"):
             assert existing_call_option.expiration_timestamp = 0
@@ -96,15 +96,28 @@ namespace Call:
 
         let (buyer_address) = get_caller_address()
 
-        # TODO: Make sure buyer sent fee in base_currency
+        with_attr error_message("Buyer must register"):
+            assert buyer_address = call_option_submission.buyer_address
+        end
+
+        # Pull in fee from buyer
+        let (call_option_contract_address) = get_contract_address()
+        let (did_buyer_pay) = IERC20.transferFrom(
+            call_option.currency_address,
+            buyer_address,
+            call_option_contract_address,
+            call_option_submission.fee)
+
+        with_attr error_message("Buyer fee payment failed"):
+            assert did_buyer_pay = TRUE
+        end
 
         let (call_option) = CallOption(
             id=call_option_submission.id,
             expiration_timestamp=call_option_submission.expiration_timestamp,
             fee=call_option_submission.fee,
             size=call_option_submission.size,
-            base_currency=call_option_submission.base_currency,
-            quote_currency=call_option_submission.quote_currency,
+            currency_address=call_option_submission.currency_address,
             strike_price=call_option_submission.strike_price,
             buyer_address=buyer_address,
             seller_address=0,
@@ -130,6 +143,7 @@ namespace Call:
 
         with_attr error_message("Buyer must register call option first"):
             assert_not_equal(call_option.expiration_timestamp, 0)
+            assert call_option.did_buyer_initialize = TRUE
         end
 
         with_attr error_message("Call has been canceled"):
@@ -140,20 +154,28 @@ namespace Call:
             assert call_option.expiration_timestamp = call_option_submission.expiration_timestamp
             assert call_option.fee = call_option_submission.fee
             assert call_option.size = call_option_submission.size
-            assert call_option.base_currency = call_option_submission.base_currency
-            assert call_option.quote_currency = call_option_submission.quote_currency
+            assert call_option.currency_address = call_option_submission.currency_address
             assert call_option.strike_price = call_option_submission.strike_price
         end
 
-        # TODO: Check seller sent collateral in quote_currency
+        # Pull in collateral from seller
+        let (call_option_contract_address) = get_contract_address()
+        let (did_seller_deposit) = IERC20.transferFrom(
+            call_option.currency_address,
+            seller_address,
+            call_option_address,
+            call_option_submission.size)
+
+        with_attr error_message("Seller deposit failed"):
+            assert did_seller_deposit = TRUE
+        end
 
         let (new_call_option) = CallOption(
             id=call_option.id,
             expiration_timestamp=call_option.expiration_timestamp,
             fee=call_option.fee,
             size=call_option.size,
-            base_currency=call_option.base_currency,
-            quote_currency=call_option.quote_currency,
+            currency_address=call_option.currency_address,
             strike_price=call_option.strike_price,
             buyer_address=call_option.buyer_address,
             seller_address=seller_address,
@@ -177,8 +199,7 @@ namespace Call:
             expiration_timestamp=call_option.expiration_timestamp,
             fee=call_option.fee,
             size=call_option.size,
-            base_currency=call_option.base_currency,
-            quote_currency=call_option.quote_currency,
+            currency_address=call_option.currency_address,
             strike_price=call_option.strike_price,
             buyer_address=call_option.buyer_address,
             seller_address=call_option.seller_address,
@@ -187,7 +208,16 @@ namespace Call:
             is_canceled=TRUE)
         call_option_storage.write(new_call_option)
 
-        # TODO: Send buyer back their fee
+        # Send buyer back their fee
+        # TODO: minus gas costs?
+        let (call_option_contract_address) = get_contract_address()
+        let (did_buyer_refund_succeed) = IERC20.transfer(
+            call_option.currency_address, call_option.buyer_address, call_option.fee)
+
+        with_attr error_message("Buyer refund failed, please try again"):
+            assert did_buyer_refund_succeed = TRUE
+        end
+
         return ()
     end
 
