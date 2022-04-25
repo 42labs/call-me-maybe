@@ -1,5 +1,6 @@
 from collections import namedtuple
 
+
 def str_to_felt(text):
     if text.lower() != text:
         print(
@@ -10,8 +11,20 @@ def str_to_felt(text):
     return int.from_bytes(b_text, "big")
 
 
-CallOptionSubmission = namedtuple("Entry", ["id", "expiration_timestamp", "fee", "size", "strike_price", "currency_address", "oracle_key"])
+CallOptionSubmission = namedtuple(
+    "Entry",
+    [
+        "id",
+        "expiration_timestamp",
+        "fee",
+        "size",
+        "strike_price",
+        "currency_address",
+        "oracle_key",
+    ],
+)
 UInt256 = namedtuple("UInt256", ["low", "high"])
+
 
 # From OZ
 def to_uint(a):
