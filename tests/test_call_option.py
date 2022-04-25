@@ -1,9 +1,13 @@
 import os
 import pytest
 import pytest_asyncio
+import time
 
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starkware_utils.error_handling import StarkException
+from starkware.crypto.signature.signature import get_random_private_key, private_to_stark_key
+
+from utils import str_to_felt, CallOptionSubmission, to_uint
 
 # The path to the contract source code.
 CONTRACT_FILE = os.path.join(
@@ -21,9 +25,15 @@ TOKEN_CONTRACT_FILE = os.path.join(
 # Also need to deploy two account contracts and a mock oracle
 # And a ERC20 token contract
 
+@pytest.fixture
+def private_keys():
+    buyer_private_key = get_random_private_key()
+    seller_private_key = get_random_private_key()
+    return buyer_private_key, seller_private_key
 
 @pytest_asyncio.fixture
-async def contracts():
+async def contracts(private_keys):
+    buyer_private_key, seller_private_key = private_keys
     starknet = await Starknet.empty()
     mock_oracle_contract = await starknet.deploy(
         source=MOCK_ORACLE_CONTRACT_FILE,
@@ -32,22 +42,58 @@ async def contracts():
         source=CONTRACT_FILE,
         constructor_calldata=[mock_oracle_contract.contract_address]
     )
+    buyer_public_key = private_to_stark_key(buyer_private_key)
     buyer_account_contract = await starknet.deploy(
         source=ACCOUNT_CONTRACT_FILE,
-        constructor_calldata=[mock_oracle_contract.contract_address]
+        constructor_calldata=[buyer_public_key]
     )
+    seller_public_key = private_to_stark_key(seller_private_key)
     seller_account_contract = await starknet.deploy(
         source=ACCOUNT_CONTRACT_FILE,
-        constructor_calldata=[mock_oracle_contract.contract_address]
+        constructor_calldata=[seller_public_key]
     )
+
+    # Mint 1 token in each account
+    name = str_to_felt("test")
+    symbol = str_to_felt("tst")
+    decimals = 18
+    initial_supply = to_uint(2)
     token_contract = await starknet.deploy(
-        source=ACCOUNT_CONTRACT_FILE,
-        constructor_calldata=[mock_oracle_contract.contract_address]
+        source=TOKEN_CONTRACT_FILE,
+        constructor_calldata=[name, symbol, decimals, *initial_supply, seller_account_contract.contract_address]
     )
+    transfer_amount = to_uint(1)
+    await token_contract.transfer(buyer_account_contract.contract_address, transfer_amount).invoke(caller_address=seller_account_contract.contract_address)
 
     return call_option_contract, buyer_account_contract, seller_account_contract, token_contract
 
 @pytest.mark.asyncio
 async def test_deploy(contracts):
+    return
+
+@pytest.mark.asyncio
+async def test_call(contracts):
+    call_option_contract, buyer_account_contract, seller_account_contract, token_contract = contracts
+
+    option_id = (await call_option_contract.generate_call_option_id().invoke()).result.id
+    expiration_timestamp = int(time.time())
+    fee = to_uint(1 * 10**17) # (0.1 when using 18 decimals)
+    size = to_uint(1 * 10**18)
+    strike_price = to_uint(21 * 10**18) # Half of 42, the oracle's answer so buyer and seller should end up with half of the collateral
+    currency_address = token_contract.contract_address
+    oracle_key = str_to_felt("tst/usd") # Doesn't matter because mock oracle always returns 42
+    call_option_submission = CallOptionSubmission(id=option_id, expiration_timestamp=expiration_timestamp, fee=fee, size=size, strike_price=strike_price, currency_address=currency_address, oracle_key=oracle_key)
+
+    await token_contract.approve(call_option_contract.contract_address, fee).invoke()
+    await call_option_contract.register_call_option(call_option_submission).invoke()
+    await call_option_contract.confirm_call_option(call_option_submission).invoke()
+
+    await call_option_contract.exercise_call_option(option_id).invoke()
+
+    result = await token_contract.balanceOf(buyer_account_contract.contract_address)
+    breakpoint()
+    result = await token_contract.balanceOf(seller_account_contract.contract_address)
+    breakpoint()
+
     return
 
