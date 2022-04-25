@@ -7,7 +7,7 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.pow import pow
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.uint256 import split_64, uint256_signed_lt, uint256_sub
+from starkware.cairo.common.uint256 import uint256_signed_le, uint256_sub
 
 from contracts.erc20.IERC20 import IERC20
 from contracts.security.reentrancy_guard import ReentrancyGuard_start, ReentrancyGuard_end
@@ -91,7 +91,7 @@ func CallOption_generate_call_option_id{
     let (call_option_id) = CallOption_next_call_option_id_storage.read()
     let next_call_option_id = call_option_id + 1
     CallOption_next_call_option_id_storage.write(next_call_option_id)
-    return (call_option_id)
+    return (next_call_option_id)
 end
 
 func CallOption_get_call_option{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -124,10 +124,10 @@ func CallOption_register_call_option{
     let (buyer_address) = get_caller_address()
     let (call_option_contract_address) = get_contract_address()
     let (did_buyer_pay) = IERC20.transferFrom(
-        call_option_submission.currency_address,
-        buyer_address,
-        call_option_contract_address,
-        call_option_submission.fee)
+        contract_address=call_option_submission.currency_address,
+        sender=buyer_address,
+        recipient=call_option_contract_address,
+        amount=call_option_submission.fee)
 
     with_attr error_message("Buyer fee payment failed"):
         assert did_buyer_pay = TRUE
@@ -145,7 +145,7 @@ func CallOption_register_call_option{
         seller_address=0,
         did_buyer_initialize=TRUE,
         did_seller_initialize=FALSE,
-        is_open=FALSE)
+        is_open=TRUE)
 
     CallOption_call_option_storage.write(call_option_submission.id, call_option)
     return ()
@@ -348,16 +348,15 @@ func CallOption_exercise_call_option{
     let (oracle_address) = CallOption_oracle_address_storage.read()
     let (price_felt, last_updated_timestamp) = IOracle.get_value(
         oracle_address, call_option.oracle_key)
-    let (low, high) = split_64(price_felt)
-    let price = Uint256(low, high)
+    # TODO need to convert properly. let (low, high) = split_64(price_felt)
+    let price = Uint256(price_felt, 0)
+
+    with_attr error_message("Price must be above the strike price for call option to be executed"):
+        uint256_signed_le(call_option.strike_price, price)
+    end
 
     let (buyer_payout, seller_payout) = CallOption_calculate_payouts(
         call_option.size, call_option.strike_price, price)
-
-    with_attr error_message("Buyer payout must be positive for call option strike to be executed"):
-        let ZERO = Uint256(0, 0)
-        uint256_signed_lt(ZERO, buyer_payout)
-    end
 
     ReentrancyGuard_start(option_id)
 
