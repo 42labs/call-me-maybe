@@ -15,3 +15,5 @@ Compile the contract by running `starknet-compile contracts/call_option/CallOpti
 
 - Non-USD quote currency
 - Verify ERC20 decimals and adjust if not 18
+- Turn the tokens into tradeable assets
+- Incorporate Black-Scholes models for using options as collateral
