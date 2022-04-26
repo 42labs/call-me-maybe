@@ -2,7 +2,7 @@
 
 You took your time with StarkNet <br />
 But there was simply no choice <br />
-L1 gave me nothing at all <br />
+L1 is nothing at all <br />
 So I learned Cairo quick <br />
 I beg and borrow and steal <br />
 StarkNet works, and it's real <br />
