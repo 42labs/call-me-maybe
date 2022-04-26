@@ -18,13 +18,6 @@ end
 #
 # Getters
 @view
-func generate_call_option_id{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        ) -> (call_option_id : felt):
-    let (call_option_id) = CallOption_generate_call_option_id()
-    return (call_option_id)
-end
-
-@view
 func get_call_option{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         option_id : felt) -> (call_option : CallOption_CallOption):
     let (call_option) = CallOption_get_call_option(option_id)
@@ -34,6 +27,12 @@ end
 #
 # Setters
 #
+@external
+func generate_call_option_id{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ) -> (call_option_id : felt):
+    let (call_option_id) = CallOption_generate_call_option_id()
+    return (call_option_id)
+end
 
 @external
 func register_call_option{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(

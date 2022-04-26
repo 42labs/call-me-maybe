@@ -1,0 +1,35 @@
+[
+    {
+        "inputs": [
+            {
+                "name": "key",
+                "type": "felt"
+            }
+        ],
+        "name": "get_value",
+        "outputs": [
+            {
+                "name": "value",
+                "type": "felt"
+            },
+            {
+                "name": "last_updated_timestamp",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "get_decimals",
+        "outputs": [
+            {
+                "name": "decimals",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

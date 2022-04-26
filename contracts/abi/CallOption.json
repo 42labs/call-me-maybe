@@ -137,18 +137,6 @@
         "type": "constructor"
     },
     {
-        "inputs": [],
-        "name": "generate_call_option_id",
-        "outputs": [
-            {
-                "name": "call_option_id",
-                "type": "felt"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "name": "option_id",
@@ -163,6 +151,17 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "generate_call_option_id",
+        "outputs": [
+            {
+                "name": "call_option_id",
+                "type": "felt"
+            }
+        ],
         "type": "function"
     },
     {
