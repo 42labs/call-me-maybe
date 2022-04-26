@@ -1,6 +1,27 @@
 # "But here's my number, so call me maybe"
  -- Carly Rae Jepsen
 
+You took your time with StarkNet
+But there was simply no choice
+L1 gave me nothing at all
+So I learned Cairo quick
+I beg and borrow and steal
+StarkNet works, and it's real
+I didn't know I would feel it
+But it's in my way
+
+Uri’s stare was holdin'
+Ripped jeans, skin was showin'
+Hot night, wind was blowin'
+Where you think ETH’s going, baby? (To the moon!)
+
+Hey, I just bought Eth, and this is crazy
+But here's my option, so call Eth, maybe
+It's hard to buy right, in this market
+But here's my option, so call Eth, maybe
+
+ -- Oskar Schulz
+
 ## About
 
 American Style Options
