@@ -23,9 +23,13 @@ But here's my option, so call Eth, maybe <br />
 
 ## About
 
-American Style Options
+Hackathon project for 2022 Starknet Hackathon in Amsterdam, by Jonas Nelle.
 
-Currency: The currency of the option, the token the option holder has the right to buy at strike price. Currently also the currency for payment of the buyer's fee.
+Project: P2P American Style Call Options Protocol.
+
+Description: Currency: The currency of the option, the token the option holder has the right to buy at strike price. Currently also the currency for payment of the buyer's fee.
+
+Motivation: Perpetuals are preferred to options because they are more liquid and because they have no delivery, so the contract parties do not have to hold the underlying assets. We address the second weakness: By using price feeds from the Pontis oracle, we enable the options to deal only with one currency for the fee, collateral and underlying spot asset.
 
 ## Usage
 
@@ -39,3 +43,4 @@ Compile the contract by running `starknet-compile contracts/call_option/CallOpti
 - Verify ERC20 decimals and adjust if not 18
 - Turn the tokens into tradeable assets
 - Incorporate Black-Scholes models for using options as collateral
+- Marketplace on top of the options protocol to facilitate matching supply and demand
