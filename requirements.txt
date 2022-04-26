@@ -7,3 +7,6 @@ pytest-asyncio==0.18.*
 
 # Remove once compatibility is fixed
 marshmallow-dataclass==8.5.3
+
+starknet.py==0.2.0a0
+bitstring==3.1.*

@@ -8,7 +8,7 @@ from starkware.crypto.signature.signature import (
     private_to_stark_key,
 )
 from starkware.starknet.testing.starknet import Starknet
-from utils import CallOptionSubmission, str_to_felt, to_uint
+from utils import CallOptionSubmission, str_to_felt, to_uint_decimals
 
 # The path to the contract source code.
 CONTRACT_FILE = os.path.join(
@@ -30,10 +30,6 @@ def private_keys():
     buyer_private_key = get_random_private_key()
     seller_private_key = get_random_private_key()
     return buyer_private_key, seller_private_key
-
-
-def to_uint_decimals(input):
-    return to_uint(int(input * 10**18))
 
 
 @pytest_asyncio.fixture
