@@ -1,5 +1,4 @@
 # "But here's my number, so call me maybe"
- -- Carly Rae Jepsen
 
 You took your time with StarkNet
 But there was simply no choice
