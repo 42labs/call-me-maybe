@@ -367,19 +367,29 @@ func CallOption_exercise_call_option{
         call_option.currency_address, call_option.seller_address, seller_payout)
     let did_payouts_succeed = did_buyer_payout_succeed * did_seller_payout_succeed
 
-    let new_call_option = CallOption_CallOption(
-        id=call_option.id,
-        expiration_timestamp=call_option.expiration_timestamp,
-        fee=call_option.fee,
-        size=call_option.size,
-        strike_price=call_option.strike_price,
-        currency_address=call_option.currency_address,
-        oracle_key=call_option.oracle_key,
-        buyer_address=call_option.buyer_address,
-        seller_address=call_option.seller_address,
-        did_buyer_initialize=call_option.did_buyer_initialize,
-        did_seller_initialize=call_option.did_seller_initialize,
-        is_open=FALSE)
+    if did_payouts_succeed == TRUE:
+        let new_call_option = CallOption_CallOption(
+            id=call_option.id,
+            expiration_timestamp=call_option.expiration_timestamp,
+            fee=call_option.fee,
+            size=call_option.size,
+            strike_price=call_option.strike_price,
+            currency_address=call_option.currency_address,
+            oracle_key=call_option.oracle_key,
+            buyer_address=call_option.buyer_address,
+            seller_address=call_option.seller_address,
+            did_buyer_initialize=call_option.did_buyer_initialize,
+            did_seller_initialize=call_option.did_seller_initialize,
+            is_open=FALSE)
+        CallOption_call_option_storage.write(call_option.id, new_call_option)
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    end
 
     ReentrancyGuard_end(option_id)
 
